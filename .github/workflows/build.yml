@@ -1,17 +1,22 @@
 name: Build MTabs WebView
+
 on: [push, pull_request]
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      # Checkout repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Python environment (gunakan Python 3.10)
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           
+      # Install dependencies yang diperlukan untuk build (termasuk zlib1g-dev)
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -32,19 +37,27 @@ jobs:
             libavcodec-dev \
             zlib1g-dev
 
+      # Setup Java dengan versi 11 (Buildozer dan python-for-android stabil dengan JDK 11)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '11' # ✅ Pakai Java 11
+          java-version: '11'  # Pastikan pakai JDK 11
 
+      # Setup Android SDK. Tambahkan variabel lingkungan SKIP_JDK_VERSION_CHECK
+      # agar sdkmanager tidak gagal karena mengharapkan JDK 17+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        env:
+          SKIP_JDK_VERSION_CHECK: true
 
+      # Install komponen Android SDK (platform, build-tools, dan NDK)
       - name: Install Android SDK components
         run: |
+          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel lingkungan diset untuk sesi ini
           sdkmanager --install "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
           
+      # Install paket Python yang dibutuhkan (Buildozer, Kivy, KivyMD, dll.)
       - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
@@ -53,6 +66,7 @@ jobs:
           pip install kivy==2.2.1
           pip install kivymd==1.1.1
 
+      # Cache direktori global Buildozer untuk mempercepat build selanjutnya
       - name: Cache Buildozer global directory
         uses: actions/cache@v3
         with:
@@ -61,6 +75,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
+      # Build APK dengan Buildozer
       - name: Build APK
         run: |
           export PATH=$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH
@@ -72,6 +87,7 @@ jobs:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.2.9519653
 
+      # Upload APK sebagai artifact build
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
