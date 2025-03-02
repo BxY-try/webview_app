@@ -6,20 +6,21 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     env:
-      SKIP_JDK_VERSION_CHECK: true  # Pastikan semua langkah memakai variabel ini secara global
+      # Variabel global untuk memastikan sdkmanager melewati pengecekan versi JDK
+      SKIP_JDK_VERSION_CHECK: true
 
     steps:
-      # Checkout repository
+      # Checkout kode dari repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up Python environment (gunakan Python 3.10)
+      # Setup Python dengan versi 3.10
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           
-      # Install dependencies, termasuk paket JAXB untuk mendukung sdkmanager
+      # Install dependencies sistem, termasuk paket JAXB yang dibutuhkan sdkmanager
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -42,26 +43,29 @@ jobs:
             libjaxb-api-java \
             libjaxb-java
 
-      # Setup Java dengan versi 17 agar sdkmanager berjalan dengan benar
+      # Setup Java dengan versi 17 agar sdkmanager dapat dijalankan (sdkmanager terbaru butuh JDK 17)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # Setup Android SDK (variabel SKIP_JDK_VERSION_CHECK sudah ada secara global)
+      # Setup Android SDK menggunakan action resmi, dengan variabel global SKIP_JDK_VERSION_CHECK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        env:
+          SKIP_JDK_VERSION_CHECK: true
 
-      # Install Android SDK components dengan menambahkan JAXB ke classpath
+      # Install komponen Android SDK
+      # Pada langkah ini, kita mengatur JAVA_TOOL_OPTIONS agar JVM menambahkan modul JAXB yang diperlukan
       - name: Install Android SDK components
         run: |
-          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel ini diset untuk sesi ini
-          # Tambahkan JAXB ke classpath agar sdkmanager dapat menemukan kelas JAXB
-          export _JAVA_OPTIONS="-cp /usr/share/java/jaxb-api.jar:/usr/share/java/jaxb-impl.jar"
+          export SKIP_JDK_VERSION_CHECK=true
+          # Menambahkan JAXB ke classpath dengan JAVA_TOOL_OPTIONS sehingga sdkmanager dapat menemukan modul javax.xml.bind
+          export JAVA_TOOL_OPTIONS="--module-path /usr/share/java --add-modules java.xml.bind"
           sdkmanager --install "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
           
-      # Install paket Python yang dibutuhkan (Buildozer, Kivy, KivyMD, dll.)
+      # Install paket Python (Buildozer, Kivy, KivyMD, dll)
       - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
@@ -70,7 +74,7 @@ jobs:
           pip install kivy==2.2.1
           pip install kivymd==1.1.1
 
-      # Cache direktori global Buildozer untuk mempercepat build selanjutnya
+      # Cache direktori Buildozer untuk mempercepat build berikutnya
       - name: Cache Buildozer global directory
         uses: actions/cache@v3
         with:
@@ -79,7 +83,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
-      # Build APK dengan Buildozer
+      # Build APK menggunakan Buildozer
       - name: Build APK
         run: |
           export PATH=$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH
@@ -91,7 +95,7 @@ jobs:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.2.9519653
 
-      # Upload APK sebagai artifact build
+      # Upload APK yang dihasilkan sebagai artifact build
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
