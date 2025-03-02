@@ -6,8 +6,7 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     env:
-      # Variabel global untuk memastikan sdkmanager melewati pengecekan versi JDK
-      SKIP_JDK_VERSION_CHECK: true
+      SKIP_JDK_VERSION_CHECK: true  # Pastikan semua langkah memakai variabel ini secara global
 
     steps:
       # Checkout kode dari repository
@@ -57,12 +56,12 @@ jobs:
           SKIP_JDK_VERSION_CHECK: true
 
       # Install komponen Android SDK
-      # Pada langkah ini, kita mengatur JAVA_TOOL_OPTIONS agar JVM menambahkan modul JAXB yang diperlukan
+      # Di sini, kita menyetel CLASSPATH sehingga JVM dapat menemukan file JAR JAXB.
       - name: Install Android SDK components
         run: |
-          export SKIP_JDK_VERSION_CHECK=true
-          # Menambahkan JAXB ke classpath dengan JAVA_TOOL_OPTIONS sehingga sdkmanager dapat menemukan modul javax.xml.bind
-          export JAVA_TOOL_OPTIONS="--module-path /usr/share/java --add-modules java.xml.bind"
+          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel ini diset untuk sesi ini
+          # Set CLASSPATH agar JVM menemukan JAXB (yang menyediakan javax.xml.bind)
+          export CLASSPATH="/usr/share/java/jaxb-api.jar:/usr/share/java/jaxb-impl.jar"
           sdkmanager --install "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
           
       # Install paket Python (Buildozer, Kivy, KivyMD, dll)
@@ -74,7 +73,7 @@ jobs:
           pip install kivy==2.2.1
           pip install kivymd==1.1.1
 
-      # Cache direktori Buildozer untuk mempercepat build berikutnya
+      # Cache direktori global Buildozer untuk mempercepat build selanjutnya
       - name: Cache Buildozer global directory
         uses: actions/cache@v3
         with:
@@ -95,7 +94,7 @@ jobs:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.2.9519653
 
-      # Upload APK yang dihasilkan sebagai artifact build
+      # Upload APK sebagai artifact build
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
