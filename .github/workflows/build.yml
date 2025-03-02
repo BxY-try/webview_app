@@ -37,15 +37,18 @@ jobs:
       - name: Install Android SDK & Command Line Tools
         run: |
           export ANDROID_HOME=$HOME/android-sdk
-          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
           mkdir -p $ANDROID_HOME/cmdline-tools/latest
-          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
-          unzip commandlinetools-linux-10406996_latest.zip -d $ANDROID_HOME/cmdline-tools/latest
+          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O sdk-tools.zip
+          unzip -q sdk-tools.zip -d $ANDROID_HOME/cmdline-tools/latest
+          # Struktur yang diunduh biasanya menghasilkan folder: $ANDROID_HOME/cmdline-tools/latest/cmdline-tools
+          # Pindahkan folder inner ke luar agar path menjadi: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
+          mv $ANDROID_HOME/cmdline-tools/latest/cmdline-tools $ANDROID_HOME/cmdline-tools/latest/
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
 
       - name: Accept Android SDK Licenses
-        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Install Android Build Tools
         run: |
