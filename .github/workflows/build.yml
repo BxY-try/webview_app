@@ -5,9 +5,9 @@ on: [push, pull_request]
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    # Mengatur variabel lingkungan secara global agar semua langkah melihat JDK 17
     env:
-      SKIP_JDK_VERSION_CHECK: true  # Tambahkan ini secara global agar semua langkah memakai variabel ini
-
+      SKIP_JDK_VERSION_CHECK: true  # Meski opsi ini sudah ada, kita tetap perlu JDK 17 agar sdkmanager berjalan
     steps:
       # Checkout repository
       - name: Checkout code
@@ -40,12 +40,12 @@ jobs:
             libavcodec-dev \
             zlib1g-dev
 
-      # Setup Java dengan versi 11 (Buildozer dan python-for-android stabil dengan JDK 11)
+      # Setup Java dengan versi 17 agar sdkmanager bisa dijalankan
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '11'  # Pastikan pakai JDK 11
+          java-version: '17'  # Ubah ke JDK 17
 
       # Setup Android SDK. Variabel SKIP_JDK_VERSION_CHECK sudah ada secara global.
       - name: Setup Android SDK
@@ -54,7 +54,7 @@ jobs:
       # Install komponen Android SDK (platform, build-tools, dan NDK)
       - name: Install Android SDK components
         run: |
-          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel juga diekspor di sesi ini
+          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel diekspor di sesi ini juga
           sdkmanager --install "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
           
       # Install paket Python yang dibutuhkan (Buildozer, Kivy, KivyMD, dll.)
