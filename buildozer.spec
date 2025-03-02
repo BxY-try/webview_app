@@ -9,7 +9,7 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 0.1
 
 # Requirements yang minimal tapi cukup untuk WebView
-requirements = python3,kivy==2.2.1,kivymd==1.1.1,pyjnius
+requirements = python3,kivy==2.2.1,kivymd==1.1.1,android,pyjnius
 
 # Orientasi default
 orientation = portrait
@@ -20,7 +20,7 @@ android.permissions = INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE
 # Konfigurasi Android
 android.api = 33
 android.minapi = 21
-android.ndk = 25b
+android.ndk = 25.2.9519653
 android.accept_sdk_license = True
 android.gradle_dependencies = androidx.webkit:webkit:1.4.0
 
@@ -37,6 +37,10 @@ android.private_storage = True
 
 # Build options
 android.build_mode = debug
+
+# SDK/NDK paths - akan diisi otomatis oleh GitHub Actions
+android.sdk_path = /usr/local/lib/android/sdk
+android.ndk_path = /usr/local/lib/android/sdk/ndk/25.2.9519653
 
 [buildozer]
 log_level = 2
