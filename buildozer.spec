@@ -17,12 +17,12 @@ orientation = portrait
 # Permission yang diperlukan
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,ACCESS_WIFI_STATE
 
-# Konfigurasi Android yang sesuai dengan Termux
+# Konfigurasi Android
 android.api = 33
 android.minapi = 21
-#android.sdk = 33
 android.ndk = 25b
 android.accept_sdk_license = True
+android.gradle_dependencies = androidx.webkit:webkit:1.4.0
 
 # Architecture yang didukung
 android.archs = arm64-v8a, armeabi-v7a
@@ -30,16 +30,14 @@ android.archs = arm64-v8a, armeabi-v7a
 # Tambahan konfigurasi untuk optimasi
 android.allow_backup = True
 android.presplash_color = #FFFFFF
-android.presplash.filename = icon.png  # Logo yang akan ditampilkan di splash
-
-# Icon aplikasi
+android.presplash.filename = icon.png
 android.icon.filename = icon.png
 
-# Pastikan assets masuk ke build (khusus jika menggunakan struktur yg terdapat folder asset)
-#source.include_patterns = assets/*
 android.private_storage = True
 
-# Log level untuk debugging
+# Build options
+android.build_mode = debug
+
 [buildozer]
 log_level = 2
 warn_on_root = 1
