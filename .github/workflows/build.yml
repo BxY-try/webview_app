@@ -1,103 +1,61 @@
-name: Build MTabs WebView
+name: Build APK with Buildozer
 
 on: [push, pull_request]
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
-    env:
-      SKIP_JDK_VERSION_CHECK: true  # Pastikan variabel ini diset secara global
 
     steps:
-      # Checkout repository
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      # Setup Python dengan versi 3.10
-      - name: Set up Python
+      - name: Set Up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
-          
-      # Install dependencies sistem, termasuk paket JAXB yang dibutuhkan sdkmanager
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            python3-pip \
-            build-essential \
-            git \
-            python3 \
-            python3-dev \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev \
-            libjaxb-api-java \
-            libjaxb-java \
-            libjaxb-core-java
+          python-version: "3.10"
 
-      # Setup Java dengan versi 17 agar sdkmanager dapat dijalankan (sdkmanager terbaru butuh JDK 17)
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y openjdk-17-jdk wget unzip
+          pip install --upgrade pip
+          pip install buildozer
+
+      - name: Install JAXB Dependencies
+        run: |
+          mkdir -p $HOME/jaxb
+          cd $HOME/jaxb
+          wget https://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar
+          wget https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-core/2.3.0/jaxb-core-2.3.0.jar
+          wget https://repo1.maven.org/maven2/com/sun/xml/bind/jaxb-impl/2.3.0/jaxb-impl-2.3.0.jar
+          echo "JAVA_TOOL_OPTIONS=-Xbootclasspath/a:$HOME/jaxb/jaxb-api-2.3.1.jar:$HOME/jaxb/jaxb-core-2.3.0.jar:$HOME/jaxb/jaxb-impl-2.3.0.jar" >> $GITHUB_ENV
+
+      - name: Set Java Version to 17
+        run: echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+
+      - name: Install Android SDK & Command Line Tools
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          mkdir -p $ANDROID_HOME/cmdline-tools/latest
+          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
+          unzip commandlinetools-linux-10406996_latest.zip -d $ANDROID_HOME/cmdline-tools/latest
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
+
+      - name: Accept Android SDK Licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+
+      - name: Install Android Build Tools
+        run: |
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+
+      - name: Run Buildozer
+        run: buildozer android debug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      # Setup Android SDK menggunakan action resmi, dengan variabel global SKIP_JDK_VERSION_CHECK
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        env:
-          SKIP_JDK_VERSION_CHECK: true
-
-      # Install Android SDK components
-      # Di sini kita menyetel _JAVA_OPTIONS untuk menambahkan JAR JAXB ke boot classpath JVM
-      - name: Install Android SDK components
-        run: |
-          export SKIP_JDK_VERSION_CHECK=true
-          # Tambahkan semua file JAR JAXB ke boot classpath
-          export _JAVA_OPTIONS="-Xbootclasspath/a:/usr/share/java/jaxb-api.jar:/usr/share/java/jaxb-impl.jar:/usr/share/java/jaxb-core.jar"
-          sdkmanager --install "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
-          
-      # Install paket Python (Buildozer, Kivy, KivyMD, dll)
-      - name: Install Python packages
-        run: |
-          python -m pip install --upgrade pip
-          pip install Cython==0.29.33
-          pip install -v buildozer==1.5.0
-          pip install kivy==2.2.1
-          pip install kivymd==1.1.1
-
-      # Cache direktori global Buildozer untuk mempercepat build selanjutnya
-      - name: Cache Buildozer global directory
-        uses: actions/cache@v3
-        with:
-          path: ~/.buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            ${{ runner.os }}-buildozer-
-
-      # Build APK menggunakan Buildozer
-      - name: Build APK
-        run: |
-          export PATH=$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/25.2.9519653
-          buildozer android debug
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }}
-          ANDROID_HOME: /usr/local/lib/android/sdk
-          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.2.9519653
-
-      # Upload APK sebagai artifact build
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: MTabs WebView APK
+          name: Built APK
           path: bin/*.apk
