@@ -1,0 +1,22 @@
+name: Build MTabs WebView
+on: [push, pull_request]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          workdir: .
+          buildozer_version: stable
+      - name: Upload APK
+        uses: actions/upload-artifact@v2
+        with:
+          name: MTabs WebView APK
+          path: ${{ steps.buildozer.outputs.filename }}
