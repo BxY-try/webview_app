@@ -1,33 +1,54 @@
 name: Build MTabs WebView
 on: [push, pull_request]
- 
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
- 
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
- 
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer==1.4.0
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-pip \
+            build-essential \
+            git \
+            python3 \
+            python3-dev \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libgstreamer1.0 \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good
+
       - name: Cache Buildozer dependencies
         uses: actions/cache@v3
         with:
           path: .buildozer
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
- 
+
       - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          workdir: .
-          buildozer_version: '1.4.0'  # Menentukan versi spesifik
-          command: buildozer android debug
- 
+        run: |
+          buildozer android debug
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: MTabs WebView APK
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: bin/*.apk
