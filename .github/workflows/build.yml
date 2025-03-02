@@ -6,7 +6,7 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     env:
-      SKIP_JDK_VERSION_CHECK: true  # Tetap set variabel ini untuk mengabaikan cek JDK pada sdkmanager
+      SKIP_JDK_VERSION_CHECK: true  # Pastikan semua langkah memakai variabel ini secara global
 
     steps:
       # Checkout repository
@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.10'
           
-      # Install dependencies yang diperlukan untuk build (termasuk zlib1g-dev dan paket JAXB)
+      # Install dependencies, termasuk paket JAXB untuk mendukung sdkmanager
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -42,21 +42,23 @@ jobs:
             libjaxb-api-java \
             libjaxb-java
 
-      # Setup Java dengan versi 17 agar sdkmanager berjalan (sdkmanager baru butuh JDK 17)
+      # Setup Java dengan versi 17 agar sdkmanager berjalan dengan benar
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'  # Pakai JDK 17 untuk kompatibilitas dengan sdkmanager terbaru
+          java-version: '17'
 
-      # Setup Android SDK. Variabel SKIP_JDK_VERSION_CHECK sudah diterapkan secara global.
+      # Setup Android SDK (variabel SKIP_JDK_VERSION_CHECK sudah ada secara global)
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      # Install komponen Android SDK (platform, build-tools, dan NDK)
+      # Install Android SDK components dengan menambahkan JAXB ke classpath
       - name: Install Android SDK components
         run: |
-          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel diekspor di sesi ini juga
+          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel ini diset untuk sesi ini
+          # Tambahkan JAXB ke classpath agar sdkmanager dapat menemukan kelas JAXB
+          export _JAVA_OPTIONS="-cp /usr/share/java/jaxb-api.jar:/usr/share/java/jaxb-impl.jar"
           sdkmanager --install "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
           
       # Install paket Python yang dibutuhkan (Buildozer, Kivy, KivyMD, dll.)
