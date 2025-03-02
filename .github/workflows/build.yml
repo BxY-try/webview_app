@@ -5,6 +5,9 @@ on: [push, pull_request]
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    env:
+      SKIP_JDK_VERSION_CHECK: true  # Tambahkan ini secara global agar semua langkah memakai variabel ini
+
     steps:
       # Checkout repository
       - name: Checkout code
@@ -44,17 +47,14 @@ jobs:
           distribution: 'temurin'
           java-version: '11'  # Pastikan pakai JDK 11
 
-      # Setup Android SDK. Tambahkan variabel lingkungan SKIP_JDK_VERSION_CHECK
-      # agar sdkmanager tidak gagal karena mengharapkan JDK 17+
+      # Setup Android SDK. Variabel SKIP_JDK_VERSION_CHECK sudah ada secara global.
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        env:
-          SKIP_JDK_VERSION_CHECK: true
 
       # Install komponen Android SDK (platform, build-tools, dan NDK)
       - name: Install Android SDK components
         run: |
-          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel lingkungan diset untuk sesi ini
+          export SKIP_JDK_VERSION_CHECK=true  # Pastikan variabel juga diekspor di sesi ini
           sdkmanager --install "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
           
       # Install paket Python yang dibutuhkan (Buildozer, Kivy, KivyMD, dll.)
