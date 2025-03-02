@@ -32,7 +32,7 @@ jobs:
             libavcodec-dev \
             zlib1g-dev
           python -m pip install --upgrade pip
-          pip install buildozer
+          pip install Cython buildozer
           # Install any other dependencies your app needs
           pip install kivy
 
