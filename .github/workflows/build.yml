@@ -6,6 +6,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -32,17 +38,22 @@ jobs:
             libavcodec-dev \
             zlib1g-dev
           python -m pip install --upgrade pip
-          pip install "Cython<3.0.0"  # Gunakan versi Cython yang stabil
-          pip install buildozer==1.5.0  # Pin ke versi spesifik
+          pip install "Cython<3.0.0"
+          pip install buildozer==1.5.0
           pip install kivy
 
-      - name: Setup buildozer
+      - name: Setup Android SDK & NDK
+        uses: android-actions/setup-android@v3
+        
+      - name: Install Android SDK components
         run: |
-          cd $GITHUB_WORKSPACE
-          buildozer init  # Buat buildozer.spec jika belum ada
-          # Tunggu sebentar untuk memastikan file tercipta
-          sleep 2
-          cat buildozer.spec  # Tampilkan isi file untuk debugging
+          yes | sdkmanager "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
+
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v3
+        with:
+          path: ~/.buildozer
+          key: buildozer-global-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
 
       - name: Build APK
         run: |
