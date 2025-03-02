@@ -40,9 +40,11 @@ jobs:
           mkdir -p $ANDROID_HOME/cmdline-tools/latest
           wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O sdk-tools.zip
           unzip -q sdk-tools.zip -d $ANDROID_HOME/cmdline-tools/latest
-          # Struktur yang diunduh biasanya menghasilkan folder: $ANDROID_HOME/cmdline-tools/latest/cmdline-tools
-          # Pindahkan folder inner ke luar agar path menjadi: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
-          mv $ANDROID_HOME/cmdline-tools/latest/cmdline-tools $ANDROID_HOME/cmdline-tools/latest/
+          # Jika folder nested 'cmdline-tools' ada, pindahkan isinya ke folder 'latest'
+          if [ -d "$ANDROID_HOME/cmdline-tools/latest/cmdline-tools" ]; then
+              mv $ANDROID_HOME/cmdline-tools/latest/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
+              rm -rf $ANDROID_HOME/cmdline-tools/latest/cmdline-tools
+          fi
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
 
