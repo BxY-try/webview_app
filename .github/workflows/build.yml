@@ -4,9 +4,6 @@ on: [push, pull_request]
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    container:
-      image: androidcontainer/android-sdk-ndk:api-29-r10e-slim
-    
     steps:
       - uses: actions/checkout@v3
 
@@ -17,8 +14,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          apt-get update
-          apt-get install -y \
+          sudo apt-get update
+          sudo apt-get install -y \
             python3-pip \
             build-essential \
             git \
@@ -33,19 +30,19 @@ jobs:
             libswscale-dev \
             libavformat-dev \
             libavcodec-dev \
-            zlib1g-dev \
-            default-jdk \
-            autoconf \
-            libtool
+            zlib1g-dev
           python -m pip install --upgrade pip
-          pip install Cython==0.29.33
-          pip install buildozer==1.5.0
+          pip install "Cython<3.0.0"  # Gunakan versi Cython yang stabil
+          pip install buildozer==1.5.0  # Pin ke versi spesifik
           pip install kivy
 
-      - name: Ensure SDK licenses
+      - name: Setup buildozer
         run: |
-          mkdir -p /opt/android/licenses
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > /opt/android/licenses/android-sdk-license
+          cd $GITHUB_WORKSPACE
+          buildozer init  # Buat buildozer.spec jika belum ada
+          # Tunggu sebentar untuk memastikan file tercipta
+          sleep 2
+          cat buildozer.spec  # Tampilkan isi file untuk debugging
 
       - name: Build APK
         run: |
