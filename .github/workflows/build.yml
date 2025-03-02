@@ -9,14 +9,17 @@ jobs:
       SKIP_JDK_VERSION_CHECK: true  # Pastikan variabel ini diset secara global
 
     steps:
+      # Checkout repository
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Setup Python dengan versi 3.10
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           
+      # Install dependencies sistem, termasuk paket JAXB yang dibutuhkan sdkmanager
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -37,26 +40,32 @@ jobs:
             libavcodec-dev \
             zlib1g-dev \
             libjaxb-api-java \
-            libjaxb-java
+            libjaxb-java \
+            libjaxb-core-java
 
+      # Setup Java dengan versi 17 agar sdkmanager dapat dijalankan (sdkmanager terbaru butuh JDK 17)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # Setup Android SDK menggunakan action resmi, dengan variabel global SKIP_JDK_VERSION_CHECK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         env:
           SKIP_JDK_VERSION_CHECK: true
 
+      # Install Android SDK components
+      # Di sini kita menyetel _JAVA_OPTIONS untuk menambahkan JAR JAXB ke boot classpath JVM
       - name: Install Android SDK components
         run: |
           export SKIP_JDK_VERSION_CHECK=true
-          # Tambahkan JAR JAXB ke boot classpath agar sdkmanager dapat menemukan kelas JAXB
-          export _JAVA_OPTIONS="-Xbootclasspath/a:/usr/share/java/jaxb-api.jar:/usr/share/java/jaxb-impl.jar"
+          # Tambahkan semua file JAR JAXB ke boot classpath
+          export _JAVA_OPTIONS="-Xbootclasspath/a:/usr/share/java/jaxb-api.jar:/usr/share/java/jaxb-impl.jar:/usr/share/java/jaxb-core.jar"
           sdkmanager --install "platforms;android-33" "build-tools;33.0.2" "ndk;25.2.9519653"
           
+      # Install paket Python (Buildozer, Kivy, KivyMD, dll)
       - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
@@ -65,6 +74,7 @@ jobs:
           pip install kivy==2.2.1
           pip install kivymd==1.1.1
 
+      # Cache direktori global Buildozer untuk mempercepat build selanjutnya
       - name: Cache Buildozer global directory
         uses: actions/cache@v3
         with:
@@ -73,6 +83,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
+      # Build APK menggunakan Buildozer
       - name: Build APK
         run: |
           export PATH=$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH
@@ -84,6 +95,7 @@ jobs:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.2.9519653
 
+      # Upload APK sebagai artifact build
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
